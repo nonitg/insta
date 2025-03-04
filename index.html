@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Chat Viewer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --instagram-blue: #0095f6;
+            --instagram-gradient: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
+            --light-gray: #f5f5f5;
+            --border-color: #dbdbdb;
+            --text-primary: #262626;
+            --text-secondary: #8e8e8e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fafafa;
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 750px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: white;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: white;
+            z-index: 10;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-picture {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--instagram-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .chat-info h1 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chat-info p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .header-actions i {
+            color: var(--instagram-blue);
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .file-input-container {
+            padding: 20px;
+            text-align: center;
+            background: var(--light-gray);
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            margin: 20px;
+            border: 2px dashed var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .file-input-container:hover {
+            border-color: var(--instagram-blue);
+        }
+
+        .file-input-label {
+            display: block;
+            cursor: pointer;
+            padding: 12px;
+            font-weight: 500;
+            color: var(--instagram-blue);
+        }
+
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-status {
+            margin-top: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .chat-container {
+            flex: 1;
+            padding: 16px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: white;
+        }
+
+        .date-divider {
+            text-align: center;
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .date-divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background-color: var(--border-color);
+            z-index: 1;
+        }
+
+        .date-text {
+            background-color: white;
+            padding: 0 12px;
+            position: relative;
+            z-index: 2;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .message-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            max-width: 75%;
+        }
+
+        .message-row {
+            display: flex;
+            margin: 2px 0;
+            align-items: flex-end;
+        }
+
+        .sent {
+            align-self: flex-end;
+        }
+
+        .sent .message-row {
+            justify-content: flex-end;
+        }
+
+        .received {
+            align-self: flex-start;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .message-bubble {
+            padding: 8px 16px;
+            border-radius: 18px;
+            position: relative;
+            max-width: 100%;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+
+        .sent .message-bubble {
+            background-color: var(--instagram-blue);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .received .message-bubble {
+            background-color: var(--light-gray);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-meta {
+            font-size: 11px;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sent .message-meta {
+            justify-content: flex-end;
+            color: var(--text-secondary);
+        }
+
+        .received .message-meta {
+            color: var(--text-secondary);
+        }
+
+        .timestamp {
+            font-size: 11px;
+        }
+
+        .reaction {
+            position: absolute;
+            bottom: -8px;
+            background-color: white;
+            border-radius: 50%;
+            padding: 2px;
+            min-width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            z-index: 1;
+        }
+
+        .sent .reaction {
+            left: -4px;
+        }
+
+        .received .reaction {
+            right: -4px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 32px;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            background: var(--instagram-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .empty-state h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            max-width: 300px;
+        }
+
+        .footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 149, 246, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--instagram-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tooltip for hover */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            top: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .app-container {
+                height: calc(100vh - 40px);
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            body {
+                padding: 0;
+            }
+
+            .message-group {
+                max-width: 85%;
+            }
+        }
+
+        /* Add CSS for the inline date display */
+        .inline-date {
+            display: none;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            text-align: center;
+        }
+
+        .show-dates .inline-date {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <div class="header-title">
+                <div class="profile-picture">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="chat-info">
+                    <h1 id="chat-name">Instagram Chat</h1>
+                    <p id="chat-participants"></p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="tooltip">
+                    <i class="fas fa-exchange-alt" id="pov-btn"></i>
+                    <span class="tooltiptext">Switch POV</span>
+                </div>
+                <div class="tooltip">
+                    <i class="fas fa-arrow-up" id="scroll-top-btn"></i>
+                    <span class="tooltiptext">Scroll to Top</span>
+                </div>
+                <div class="tooltip">
+                    <i class="fas fa-download" id="download-btn"></i>
+                    <span class="tooltiptext">Save as HTML</span>
+                </div>
+                <div class="tooltip">
+                    <i class="fas fa-info-circle" id="info-btn"></i>
+                    <span class="tooltiptext">Chat Info</span>
+                </div>
+                <div class="tooltip">
+                    <i class="fas fa-calendar-alt" id="toggle-dates-btn"></i>
+                    <span class="tooltiptext">Toggle Dates</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="file-input-container">
+            <label for="jsonFile" class="file-input-label">
+                <i class="fas fa-file-import"></i> Import Instagram Chat JSON
+            </label>
+            <input type="file" id="jsonFile" class="file-input" accept=".json">
+            <div class="file-status" id="file-status">No file selected</div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading your chat...</p>
+        </div>
+
+        <div class="chat-container" id="chat">
+            <div class="empty-state">
+                <i class="fab fa-instagram"></i>
+                <h2>Import your Instagram Chat</h2>
+                <p>Upload a JSON file exported from Instagram to view your conversation history.</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            Instagram Chat Viewer • Made with <i class="fas fa-heart" style="color: #e1306c;"></i>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let chatData = null;
+        let participants = [];
+        let senderColors = {};
+        let currentUserIndex = 0; // Tracks which participant is considered "you"
+
+        // Generate a color for each participant
+        function generateUserColor(username) {
+            // Simple hash function for consistent colors
+            let hash = 0;
+            for (let i = 0; i < username.length; i++) {
+                hash = username.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            // Use hue values that are visually distinct but pleasant
+            const hue = hash % 360;
+            return `hsl(${hue}, 70%, 65%)`;
+        }
+
+        // Get initials from a name
+        function getInitials(name) {
+            if (!name) return "?";
+            return name.split(' ').map(n => n[0]).join('').toUpperCase();
+        }
+
+        // Format timestamp into a readable date and time
+        function formatTimestamp(ms) {
+            const date = new Date(ms);
+            
+            // Format for date divider (e.g., "March 12, 2023")
+            const dateDivider = date.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            // Format for message timestamp (e.g., "2:45 PM")
+            const messageTime = date.toLocaleString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            return {
+                date: dateDivider,
+                time: messageTime,
+                full: date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                })
+            };
+        }
+
+        // More comprehensive emoji decoder
+        function decodeEmojis(str) {
+            if (!str) return '';
+            
+            // Expanded emoji and special character mapping
+            const emojiMap = {
+                // Hearts
+                "\\u00e2\\u009d\\u00a4": "❤️",
+                "\\u00f0\\u009f\\u0092\\u009c": "💜",
+                "\\u00f0\\u009f\\u0092\\u0095": "💕",
+                "\\u00f0\\u009f\\u0092\\u0097": "💗",
+                "\\u00f0\\u009f\\u0092\\u0094": "💔",
+                "\\u00f0\\u009f\\u0096\\u00a4": "🖤",
+                
+                // Faces and emotions
+                "\\u00f0\\u009f\\u0098\\u0082": "😂",
+                "\\u00f0\\u009f\\u0098\\u0083": "😃",
+                "\\u00f0\\u009f\\u0098\\u008a": "😊",
+                "\\u00f0\\u009f\\u0098\\u008d": "😍",
+                "\\u00f0\\u009f\\u0098\\u0098": "😘",
+                "\\u00f0\\u009f\\u0098\\u0089": "😉",
+                "\\u00f0\\u009f\\u0098\\u0094": "😔",
+                "\\u00f0\\u009f\\u0098\\u008f": "😏",
+                "\\u00f0\\u009f\\u0098\\u0085": "😅",
+                "\\u00f0\\u009f\\u0098\\u00ad": "😭",
+                "\\u00f0\\u009f\\u0098\\u00a9": "😩",
+                "\\u00f0\\u009f\\u0098\\u00b3": "😳",
+                "\\u00f0\\u009f\\u0098\\u00a1": "😡",
+                "\\u00f0\\u009f\\u0098\\u00aa": "😪",
+                "\\u00f0\\u009f\\u0098\\u00b4": "😴",
+                
+                // Hand gestures
+                "\\u00f0\\u009f\\u0091\\u008d": "👍",
+                "\\u00f0\\u009f\\u0091\\u008e": "👎",
+                "\\u00f0\\u009f\\u0091\\u008f": "👏",
+                "\\u00f0\\u009f\\u0091\\u008b": "👋",
+                "\\u00f0\\u009f\\u0091\\u0086": "👆",
+                "\\u00f0\\u009f\\u0091\\u0087": "👇",
+                "\\u00f0\\u009f\\u0091\\u0089": "👉",
+                "\\u00f0\\u009f\\u0091\\u0088": "👈",
+                
+                // Objects and symbols
+                "\\u00f0\\u009f\\u008e\\u0080": "🎀",
+                "\\u00f0\\u009f\\u0092\\u0080": "💀",
+                "\\u00f0\\u009f\\u0094\\u00a5": "🔥",
+                "\\u00f0\\u009f\\u0092\\u00af": "💯",
+                "\\u00f0\\u009f\\u0092\\u00a9": "💩",
+                "\\u00f0\\u009f\\u0092\\u00ab": "💫",
+                "\\u00f0\\u009f\\u0092\\u00a8": "💨",
+                "\\u00f0\\u009f\\u0092\\u00a6": "💦",
+                "\\u00f0\\u009f\\u008c\\u009f": "🌟",
+                
+                // Modern emojis
+                "\\u00f0\\u009f\\u00a4\\u0093": "🤓",
+                "\\u00f0\\u009f\\u00a4\\u00a9": "🤩",
+                "\\u00f0\\u009f\\u00a5\\u00ba": "🥺",
+                "\\u00f0\\u009f\\u00a4\\u00a1": "🤡",
+                "\\u00f0\\u009f\\u00a4\\u00aa": "🤪",
+                "\\u00f0\\u009f\\u00a4\\u008d": "🤍",
+                "\\u00f0\\u009f\\u00a5\\u00b0": "🥰",
+                
+                // Special characters
+                "\\u00e2\\u0080\\u0099": "'",
+                "\\u00e2\\u0080\\u009c": '"',
+                "\\u00e2\\u0080\\u009d": "",
+                "\\u00e2\\u0080\\u0098": "'",
+                "\\u00e2\\u0080\\u00a6": "…",
+                "\\u00e2\\u0080\\u0093": "–",
+                "\\u00e2\\u0080\\u0094": "—",
+                
+                // Common accented characters
+                "\\u00c3\\u00a9": "é",
+                "\\u00c3\\u00a1": "á",
+                "\\u00c3\\u00ad": "í",
+                "\\u00c3\\u00b3": "ó",
+                "\\u00c3\\u00ba": "ú",
+                "\\u00c3\\u00b1": "ñ",
+                "\\u00c3\\u00bc": "ü"
+            };
+            
+            // First replace known emoji patterns
+            for (const [encoded, emoji] of Object.entries(emojiMap)) {
+                const regex = new RegExp(encoded.replace(/\\/g, '\\'), 'g');
+                str = str.replace(regex, emoji);
+            }
+            
+            // Handle standard 4-digit unicode escapes
+            str = str.replace(/\\u([0-9a-f]{4})/gi, (match, p1) => {
+                return String.fromCodePoint(parseInt(p1, 16));
+            });
+            
+            // Handle multi-byte emoji encoding
+            str = str.replace(/\\u([0-9a-f]{4})\\u([0-9a-f]{4})/gi, (match, p1, p2) => {
+                return String.fromCodePoint(parseInt(p1, 16), parseInt(p2, 16));
+            });
+            
+            // Fix escaped backslash sequences
+            str = str.replace(/\\\\/g, '\\');
+            
+            return str;
+        }
+
+        // Group messages by date and sender for better visual presentation
+        function groupMessages(messages) {
+            // Create a map of reactions for easy lookup
+            const reactions = {};
+            
+            messages.forEach(msg => {
+                // Add any reactions that are already in the message object
+                if (msg.reactions && msg.reactions.length > 0) {
+                    if (!reactions[msg.timestamp_ms]) {
+                        reactions[msg.timestamp_ms] = [];
+                    }
+                    msg.reactions.forEach(reaction => {
+                        reactions[msg.timestamp_ms].push({
+                            reaction: reaction.reaction,
+                            sender: reaction.actor,
+                            timestamp: reaction.timestamp * 1000 // Convert to ms
+                        });
+                    });
+                }
+                
+                // Also process "Reacted" messages for backward compatibility
+                if (msg.content && msg.content.startsWith("Reacted ")) {
+                    const match = msg.content.match(/Reacted (.*) to/);
+                    if (match && match[1]) {
+                        const reaction = match[1];
+                        // Find the most recent message before this reaction
+                        const targetMessage = messages.find(m => 
+                            m.timestamp_ms < msg.timestamp_ms && 
+                            !m.content?.startsWith("Reacted ")
+                        );
+                        
+                        if (targetMessage) {
+                            if (!reactions[targetMessage.timestamp_ms]) {
+                                reactions[targetMessage.timestamp_ms] = [];
+                            }
+                            reactions[targetMessage.timestamp_ms].push({
+                                reaction: reaction,
+                                sender: msg.sender_name,
+                                timestamp: msg.timestamp_ms
+                            });
+                        }
+                    }
+                }
+            });
+            
+            // Reverse messages to show oldest first
+            const sortedMessages = [...messages].reverse();
+            
+            // Group by date
+            const dateGroups = {};
+            
+            sortedMessages.forEach(msg => {
+                // Skip standalone reaction messages
+                if (msg.content && msg.content.startsWith("Reacted ")) {
+                    return;
+                }
+                
+                const timestamp = formatTimestamp(msg.timestamp_ms);
+                const dateKey = timestamp.date;
+                
+                if (!dateGroups[dateKey]) {
+                    dateGroups[dateKey] = [];
+                }
+                
+                // Add message with any reactions
+                const messageWithReactions = {
+                    ...msg,
+                    formattedTime: timestamp.time,
+                    formattedFull: timestamp.full,
+                    // Add reactions if any exist for this message
+                    reactions: reactions[msg.timestamp_ms] || []
+                };
+                
+                dateGroups[dateKey].push(messageWithReactions);
+            });
+            
+            return dateGroups;
+        }
+
+        // Display messages in the chat container
+        function displayMessages(messages) {
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            
+            // Get and process chat data
+            chatData = messages;
+            
+            // Extract participants and set chat title
+            participants = [];
+            messages.forEach(msg => {
+                if (!participants.includes(msg.sender_name)) {
+                    participants.push(msg.sender_name);
+                    // Generate a consistent color for this user
+                    senderColors[msg.sender_name] = generateUserColor(msg.sender_name);
+                }
+            });
+            
+            // Update chat info in header
+            document.getElementById('chat-name').textContent = participants.join(', ').slice(0, 30) + (participants.join(', ').length > 30 ? '...' : '');
+            document.getElementById('chat-participants').textContent = `${participants.length} participants`;
+            
+            // Group messages by date
+            const groupedMessages = groupMessages(messages);
+            
+            // Clear existing messages
+            const chat = document.getElementById('chat');
+            chat.innerHTML = '';
+            
+            // Display messages grouped by date
+            Object.entries(groupedMessages).forEach(([date, messagesForDate]) => {
+                // Add date divider
+                const dateDivider = document.createElement('div');
+                dateDivider.className = 'date-divider';
+                dateDivider.innerHTML = `<span class="date-text">${date}</span>`;
+                chat.appendChild(dateDivider);
+                
+                // Group consecutive messages from the same sender
+                let currentSender = null;
+                let currentGroup = null;
+                
+                messagesForDate.forEach((msg, index) => {
+                    const isSent = participants.indexOf(msg.sender_name) === currentUserIndex;
+                    
+                    // Start a new group if sender changes
+                    if (msg.sender_name !== currentSender) {
+                        currentSender = msg.sender_name;
+                        currentGroup = document.createElement('div');
+                        currentGroup.className = `message-group ${isSent ? 'sent' : 'received'}`;
+                        chat.appendChild(currentGroup);
+                    }
+                    
+                    // Create message row
+                    const messageRow = document.createElement('div');
+                    messageRow.className = 'message-row';
+                    
+                    // Add avatar for received messages
+                    if (!isSent) {
+                        const avatar = document.createElement('div');
+                        avatar.className = 'avatar';
+                        avatar.textContent = getInitials(msg.sender_name);
+                        avatar.style.backgroundColor = senderColors[msg.sender_name];
+                        messageRow.appendChild(avatar);
+                    }
+                    
+                    // Create message bubble
+                    const bubble = document.createElement('div');
+                    bubble.className = 'message-bubble';
+                    
+                    // Decode and set content
+                    const decodedContent = decodeEmojis(msg.content || '');
+                    bubble.textContent = decodedContent;
+                    
+                    messageRow.appendChild(bubble);
+                    
+                    // Add reactions as indicators if they exist
+                    if (msg.reactions && msg.reactions.length > 0) {
+                        const reactionContainer = document.createElement('div');
+                        reactionContainer.className = 'reaction';
+                        
+                        // Group identical reactions
+                        const reactionCounts = msg.reactions.reduce((acc, r) => {
+                            const emoji = decodeEmojis(r.reaction);
+                            acc[emoji] = (acc[emoji] || 0) + 1;
+                            return acc;
+                        }, {});
+                        
+                        // Show the most common reaction, or if tied, show the first one
+                        const [emoji, count] = Object.entries(reactionCounts)
+                            .sort((a, b) => b[1] - a[1])[0];
+                        
+                        reactionContainer.textContent = emoji;
+                        
+                        // Add the reaction to the message bubble
+                        bubble.appendChild(reactionContainer);
+                    }
+                    
+                    currentGroup.appendChild(messageRow);
+                    
+                    // Add timestamp
+                    const meta = document.createElement('div');
+                    meta.className = 'message-meta';
+                    
+                    // Create timestamp element
+                    const timestamp = document.createElement('span');
+                    timestamp.className = 'timestamp';
+                    timestamp.textContent = msg.formattedTime;
+                    meta.appendChild(timestamp);
+                    
+                    // Add inline date
+                    const inlineDate = document.createElement('div');
+                    inlineDate.className = 'inline-date';
+                    inlineDate.textContent = msg.formattedFull;
+                    meta.appendChild(inlineDate);
+                    
+                    currentGroup.appendChild(meta);
+                });
+            });
+            
+            // Scroll to the bottom
+            chat.scrollTop = chat.scrollHeight;
+            
+            // Hide loading indicator
+            document.getElementById('loading').style.display = 'none';
+            
+            // Hide the file input container
+            document.querySelector('.file-input-container').style.display = 'none';
+        }
+
+        // Handle file input change
+        document.getElementById('jsonFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('file-status').textContent = `Selected: ${file.name}`;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        if (jsonData.messages) {
+                            displayMessages(jsonData.messages);
+                        } else {
+                            alert('No messages found in JSON file');
+                        }
+                    } catch (error) {
+                        console.error('Error parsing JSON:', error);
+                        alert('Error parsing JSON file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Handle download button click - saves the current view as HTML
+        document.getElementById('download-btn').addEventListener('click', function() {
+            if (!chatData) {
+                alert('Please load a chat first');
+                return;
+            }
+            
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'instagram-chat.html';
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(function() {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+        });
+
+        // Handle info button click - shows chat information
+        document.getElementById('info-btn').addEventListener('click', function() {
+            if (!chatData) {
+                alert('Please load a chat first');
+                return;
+            }
+            
+            // Count messages per participant
+            const messageCounts = {};
+            participants.forEach(p => messageCounts[p] = 0);
+            
+            chatData.forEach(msg => {
+                if (messageCounts[msg.sender_name] !== undefined) {
+                    messageCounts[msg.sender_name]++;
+                }
+            });
+            
+            // Format the info message
+            let infoMessage = `Chat Information:\n\n`;
+            infoMessage += `Total messages: ${chatData.length}\n`;
+            infoMessage += `Date range: ${formatTimestamp(chatData[chatData.length-1].timestamp_ms).full} - ${formatTimestamp(chatData[0].timestamp_ms).full}\n\n`;
+            infoMessage += `Messages per participant:\n`;
+            
+            Object.entries(messageCounts).forEach(([name, count]) => {
+                infoMessage += `${name}: ${count} messages\n`;
+            });
+            
+            alert(infoMessage);
+        });
+
+        // Handle POV switch button click
+        document.getElementById('pov-btn').addEventListener('click', function() {
+            if (!chatData) {
+                alert('Please load a chat first');
+                return;
+            }
+            
+            // Cycle through participants
+            currentUserIndex = (currentUserIndex + 1) % participants.length;
+            
+            // Redisplay messages with new POV
+            displayMessages(chatData);
+        });
+
+        // Handle scroll to top button click
+        document.getElementById('scroll-top-btn').addEventListener('click', function() {
+            const chat = document.getElementById('chat');
+            chat.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Add event listener for the toggle dates button
+        document.getElementById('toggle-dates-btn').addEventListener('click', function() {
+            const chat = document.getElementById('chat');
+            chat.classList.toggle('show-dates');
+            
+            // Save preference
+            const showDates = chat.classList.contains('show-dates');
+            localStorage.setItem('showDates', showDates);
+        });
+
+        // Load date preference on startup
+        document.addEventListener('DOMContentLoaded', function() {
+            const showDates = localStorage.getItem('showDates') === 'true';
+            if (showDates) {
+                document.getElementById('chat').classList.add('show-dates');
+            }
+        });
+    </script>
+</body>
+</html>
